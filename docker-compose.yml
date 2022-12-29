@@ -10,3 +10,6 @@ services:
       - type: bind
         source: .
         target: /slcc
+    stdin_open: true
+    tty: true
+    working_dir: /slcc
