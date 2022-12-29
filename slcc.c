@@ -98,7 +98,7 @@ Token *tokenize(char *p) {
     }
 
     if (isdigit(*p)) {
-      cur = new_token(TK_NUM, cur, p++);
+      cur = new_token(TK_NUM, cur, p);
       cur->val = strtol(p, &p, 10);
       continue;
     }
@@ -125,13 +125,12 @@ int main(int argc, char **argv) {
   printf("main:\n");
 
   // 式の最初の方は数でなければならないのでチェックして最初の mov を出力
-  printf("  mov rax, %ld\n", expect_number());
+  printf("  mov rax, %d\n", expect_number());
 
   // `+ <数>`あるいは`- <数>`というトークンの並びを消費しつつ、アセンブリを出力
-
   while (!at_eof()) {
     if(consume('+')) {
-      printf("  mov rax, %d\n", expect_number());
+      printf("  add rax, %d\n", expect_number());
       continue;
     }
     consume('-');
