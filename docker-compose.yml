@@ -1,0 +1,15 @@
+version: '3'
+services:
+  slcc:
+    image: slcc
+    container_name: slcc
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - type: bind
+        source: .
+        target: /slcc
+    stdin_open: true
+    tty: true
+    working_dir: /slcc
