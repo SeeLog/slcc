@@ -24,6 +24,13 @@ struct Node {
   int val;  // ND_NUM のときに使われる
 };
 
+bool consume(char op);
+Node *primary();
+Node *mul();
+void expect(char op);
+int expect_number();
+
+
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
   Node *node = calloc(1, sizeof(Node));
   node->kind = kind;
@@ -208,8 +215,7 @@ Token *new_token(TokenKind kind, Token *cur, char *str) {
 }
 
 // 入力文字列 user_input をトークナイズして返す
-Token *tokenize() {
-  char *p = user_input;
+Token *tokenize(char *p) {
   Token head;
   head.next = NULL;
   Token *cur = &head;
@@ -247,26 +253,17 @@ int main(int argc, char **argv) {
 
   // トークナイズする
   user_input = argv[1];
-  token = tokenize();
+  token = tokenize(user_input);
+  Node *node = expr();
 
   // アセンブリの最初の方を出力
   printf(".intel_syntax noprefix\n");
   printf(".global main\n");
   printf("main:\n");
 
-  // 式の最初の方は数でなければならないのでチェックして最初の mov を出力
-  printf("  mov rax, %d\n", expect_number());
+  gen(node);
 
-  // `+ <数>`あるいは`- <数>`というトークンの並びを消費しつつ、アセンブリを出力
-  while (!at_eof()) {
-    if(consume('+')) {
-      printf("  add rax, %d\n", expect_number());
-      continue;
-    }
-    consume('-');
-    printf("  sub rax, %d\n", expect_number());
-  }
-
+  printf("  pop rax\n");
   printf("  ret\n");
   return 0;
 }
