@@ -35,13 +35,14 @@ jobs:
           echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_OUTPUT
           echo "TAR_PATH=${TAR_PATH}" >> $GITHUB_OUTPUT
           echo "CACHE_PATH=${CACHE_PATH}" >> $GITHUB_OUTPUT
+          echo "CACHE_KEY=${IMAGE_NAME}_${VARIANT}" >> $GITHUB_OUTPUT
 
       - name: Enable cache
         id: cache
         uses: actions/cache@v3
         with:
           path: ${{ steps.image_tag.outputs.CACHE_PATH }}
-          key: ${{ steps.image_tag.outputs.IMAGE_NAME }}-${{ env.ARCH }}
+          key: ${{ steps.image_tag.outputs.CACHE_KEY }}
 
       - name: Load image from cache if exists
         if: steps.cache.outputs.cache-hit == 'true'
