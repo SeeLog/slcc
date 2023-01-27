@@ -27,6 +27,7 @@ struct Node {
 bool consume(char op);
 Node *primary();
 Node *mul();
+Node *unary();
 void expect(char op);
 int expect_number();
 
@@ -63,9 +64,9 @@ Node *expr() {
   }
 }
 
-// mul = primary ( "*" primary | "/" primary )*
+// mul = unary ( "*" primary | "/" primary )*
 Node *mul() {
-  Node *node = primary();
+  Node *node = unary();
 
   for (;;) {
     if (consume('*')) {
@@ -78,6 +79,19 @@ Node *mul() {
       return node;
     }
   }
+}
+
+// unary = ("+" | "-")? primary
+Node *unary() {
+  if (consume('+')) {
+    // +x -> x
+    return primary();
+  }
+  if (consume('-')) {
+    // -x -> 0 - x
+    return new_node(ND_SUB, new_node_num(0), primary());
+  }
+  return primary();
 }
 
 // primary = num | "(" expr ")"
