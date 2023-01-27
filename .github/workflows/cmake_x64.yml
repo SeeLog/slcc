@@ -21,7 +21,7 @@ jobs:
         id: image_tag
         run: |
           # Define cache dir
-          PATH_CACHE="/tmp/docker_cache_${{ env.ARCH }}"
+          CACHE_PATH="/tmp/docker_cache_${{ env.ARCH }}"
           # Get Dockerfile hash for image cache
           IMAGE_HASH="${{ hashFiles('./Dockerfile') }}"
           # Create image tag
@@ -30,16 +30,17 @@ jobs:
           TAG="${IMAGE_NAME}:${VARIANT}"
           # Cache dir setting
           TAR_NAME="${IMAGE_NAME}_${VARIANT}.tar"
-          TAR_PATH="${{ env.PATH_CACHE }}/${TAR_NAME}"
+          TAR_PATH="${{ env.CACHE_PATH }}/${TAR_NAME}"
           echo "TAG=${TAG}" >> $GITHUB_OUTPUT
           echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_OUTPUT
           echo "TAR_PATH=${TAR_PATH}" >> $GITHUB_OUTPUT
+          echo "CACHE_PATH=${CACHE_PATH}" >> $GITHUB_OUTPUT
 
       - name: Enable cache
         id: cache
         uses: actions/cache@v2
         with:
-          path: ${{ env.PATH_CACHE }}
+          path: ${{ steps.image_tag.outputs.CACHE_PATH }}
           key: ${{ steps.image_tag.outputs.IMAGE_NAME }}-${{ env.ARCH }}
 
       - name: Load image from cache if exists
@@ -51,7 +52,7 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
           docker build -t ${{ steps.image_tag.outputs.TAG }} .
-          mkdir -p ${{ env.PATH_CACHE }}
+          mkdir -p ${{ steps.image_tag.outputs.CACHE_PATH }}
           docker save ${{ steps.image_tag.outputs.TAG }} > ${{ steps.image_tag.outputs.TAR_PATH }}
 
       - name: Run tests in container
