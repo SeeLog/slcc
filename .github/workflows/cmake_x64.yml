@@ -55,13 +55,8 @@ jobs:
           mkdir -p ${{ steps.image_tag.outputs.CACHE_PATH }}
           docker save ${{ steps.image_tag.outputs.TAG }} > ${{ steps.image_tag.outputs.TAR_PATH }}
 
-      - name: whoami
-        run: |
-          whoami
-
       - name: Run tests in container
         run: |
-          # Change owner of workspace
+          # Change owner of workspace to ubuntu user
           sudo chown -R 1000:1000 ${{ github.workspace }}
-          docker run --rm -v ${{ github.workspace }}:/work -w /work  ${{ steps.image_tag.outputs.TAG }} ls -la
           docker run --rm -v ${{ github.workspace }}:/work -w /work  ${{ steps.image_tag.outputs.TAG }} make test
