@@ -8,20 +8,22 @@ on:
 
 env:
   ARCH: x64
-  PATH_CACHE: /tmp/docker_cache_${{ env.ARCH }}
 
 jobs:
   test:
     timeout-minutes: 10
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
 
       - name: Create image tag
         id: image_tag
         run: |
+          # Define cache dir
+          PATH_CACHE="/tmp/docker_cache_${{ env.ARCH }}"
           # Get Dockerfile hash for image cache
-          IMAGE_HASH=${{ hashFiles('./Dockerfile') }}
+          IMAGE_HASH="${{ hashFiles('./Dockerfile') }}"
           # Create image tag
           VARIANT="$(TZ=UTC-9 date +%Y%m%d)_${IMAGE_HASH:0:7}"
           IMAGE_NAME="slcc_cmake_${{ env.ARCH }}"
