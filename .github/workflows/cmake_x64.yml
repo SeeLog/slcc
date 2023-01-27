@@ -30,7 +30,7 @@ jobs:
           TAG="${IMAGE_NAME}:${VARIANT}"
           # Cache dir setting
           TAR_NAME="${IMAGE_NAME}_${VARIANT}.tar"
-          TAR_PATH="${{ env.CACHE_PATH }}/${TAR_NAME}"
+          TAR_PATH="${CACHE_PATH}/${TAR_NAME}"
           echo "TAG=${TAG}" >> $GITHUB_OUTPUT
           echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_OUTPUT
           echo "TAR_PATH=${TAR_PATH}" >> $GITHUB_OUTPUT
