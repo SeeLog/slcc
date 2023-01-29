@@ -40,6 +40,16 @@ bool consume(char *op) {
   return true;
 }
 
+// 次のトークンが識別子の場合、トークンを1つ読み進めてその識別子であるトークンを返す。
+Token *consume_ident() {
+  if (token->kind != TK_IDENT) {
+    return NULL;
+  }
+  Token *tok = token;
+  token = token->next;
+  return tok;
+}
+
 
 // 次のトークンが期待している文字列のときには、トークンを1つ読み進める。
 // それ以外の場合にはエラーを報告する。
@@ -109,8 +119,14 @@ Token *tokenize(char *p) {
       continue;
     }
 
-    if (strchr("+-*/()<>", *p)) {
+    if (strchr("+-*/()<>;", *p)) {
       cur = new_token(TK_RESERVED, cur, p++, 1);
+      continue;
+    }
+
+    if ('a' <= *p && *p <= 'z') {
+      cur = new_token(TK_IDENT, cur, p++, 1);
+      cur->len = 1;
       continue;
     }
 
