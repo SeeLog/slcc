@@ -63,13 +63,14 @@ typedef enum {
 typedef struct Node Node;
 struct Node {
   NodeKind kind;  // ノードの型
+  Node *next;     // 次のノード
   Node *lhs;      // 左辺
   Node *rhs;      // 右辺
   int val;        // ND_NUM のときに使われる
   int offset;     // ND_LVAR のときに使われる
 };
 
-void *program();
+Node *program();
 Node *expr();
 
 /**
