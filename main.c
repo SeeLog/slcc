@@ -10,9 +10,21 @@ int main(int argc, char **argv) {
   // 結果は code に保存される
   user_input = argv[1];
   token = tokenize(user_input);
-  Node *node = program();
+  Program *prog = program();
 
-  codegen(node);
+  int offset = 0;
+  for (LVar *lvar = prog->locals; lvar; lvar = lvar->next) {
+    offset += 8;
+    lvar->offset = offset;
+  }
+
+  for (Node *node = prog->node; node; node = node->next) {
+    fprintf(stderr, "kind: %d\n", node->kind);
+  }
+
+  prog->stack_size = offset;
+
+  codegen(prog);
 
   return 0;
 }

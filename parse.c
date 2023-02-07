@@ -1,8 +1,25 @@
 #include "slcc.h"
 
+// ローカル変数
+LVar *locals;
+
 Node *new_node(NodeKind kind);
 Node *new_binary(NodeKind kind, Node *lhs, Node *rhs);
 Node *new_num(int val);
+
+Node *new_var(LVar *lvar) {
+  Node *node = new_node(ND_LVAR);
+  node->lvar = lvar;
+  return node;
+}
+
+LVar *push_var(char *name) {
+  LVar *lvar = calloc(1, sizeof(LVar));
+  lvar->next = locals;
+  lvar->name = name;
+  locals = lvar;
+  return lvar;
+}
 
 Node *stmt();
 Node *expr();
@@ -14,6 +31,13 @@ Node *mul();
 Node *unary();
 Node *primary();
 
+LVar *find_lvar(Token *tok) {
+  for (LVar *var = locals; var; var = var->next) {
+    if (strlen(var->name) == tok->len && !memcmp(tok->str, var->name, tok->len))
+      return var;
+  }
+  return NULL;
+}
 
 Node *new_node(NodeKind kind) {
   Node *node = calloc(1, sizeof(Node));
@@ -30,16 +54,23 @@ Node *new_binary(NodeKind kind, Node *lhs, Node *rhs) {
   return node;
 }
 
+Node *new_unary(NodeKind kind, Node *expr) {
+  Node *node = new_node(kind);
+  node->lhs = expr;
+  return node;
+}
+
 Node *new_num(int val) {
-  Node *node = calloc(1, sizeof(Node));
-  node->kind = ND_NUM;
+  Node *node = new_node(ND_NUM);
   node->val = val;
 
   return node;
 }
 
 // program = stmt*
-Node *program() {
+Program *program() {
+  locals = NULL;
+
   Node head;
   head.next = NULL;
   Node *cur = &head;
@@ -49,12 +80,23 @@ Node *program() {
     cur = cur->next;
   }
 
-  return head.next;
+  Program *prog = calloc(1, sizeof(Program));
+  prog->node = head.next;
+  prog->locals = locals;
+
+  return prog;
 }
 
 // stmt = expr ";"
+//      | "return" expr ";"
 Node *stmt() {
-  Node *node = expr();
+  if (consume("return")) {
+    Node *node = new_unary(ND_RETURN, expr());
+    expect(";");
+    return node;
+  }
+
+  Node *node = new_unary(ND_EXPR_STMT, expr());
   expect(";");
   return node;
 }
@@ -132,16 +174,16 @@ Node *add() {
   }
 }
 
-// mul = unary ( "*" primary | "/" primary )*
+// mul = unary ( "*" unary | "/" unary )*
 Node *mul() {
   Node *node = unary();
 
   for (;;) {
     if (consume("*")) {
-      node = new_binary(ND_MUL, node, primary());
+      node = new_binary(ND_MUL, node, unary());
     }
     else if (consume("/")) {
-      node = new_binary(ND_DIV, node, primary());
+      node = new_binary(ND_DIV, node, unary());
     }
     else {
       return node;
@@ -149,22 +191,22 @@ Node *mul() {
   }
 }
 
-// unary = ("+" | "-")? primary
+// unary = ("+" | "-")? unary
+//       | primary
 Node *unary() {
   if (consume("+")) {
     // +x -> x
-    return primary();
+    return unary();
   }
   if (consume("-")) {
     // -x -> 0 - x
-    return new_binary(ND_SUB, new_num(0), primary());
+    return new_binary(ND_SUB, new_num(0), unary());
   }
   return primary();
 }
 
 // primary = num | ident | "(" expr ")"
 Node *primary() {
-  // ( が来たら "(" expr ")" が来るはず、来なければ受理できない
   if (consume("(")) {
     Node *node = expr();
     expect(")");
@@ -173,12 +215,11 @@ Node *primary() {
 
   Token *tok = consume_ident();
   if (tok) {
-    Node *node = calloc(1, sizeof(Node));
-    node->kind = ND_LVAR;
-    node->offset = (tok->str[0] - 'a' + 1) * 8;
-    return node;
+    LVar *lvar = find_lvar(tok);
+    if (!lvar)
+      lvar = push_var(strndup(tok->str, tok->len));
+    return new_var(lvar);
   }
 
-  // そうでなければ数値を受理
   return new_num(expect_number());
 }

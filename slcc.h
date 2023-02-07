@@ -9,6 +9,15 @@
  * tokenize.c
 */
 
+// ローカル変数の型
+typedef struct LVar LVar;
+struct LVar {
+  LVar *next; // 次の変数かNULL
+  char *name; // 変数の名前
+  int len;    // 名前の長さ
+  int offset; // RBPからのオフセット
+};
+
 // トークンの種類
 typedef enum {
   TK_RESERVED, // 記号
@@ -29,12 +38,13 @@ struct Token {
 void error(char *fmt, ...);
 void error_at(char *loc, char *fmt, ...);
 bool consume(char *op);
+char *strndup(char *p, int len);
 Token *consume_ident();
 void expect(char *op);
 int expect_number();
 bool at_eof();
 Token *new_token(TokenKind kind, Token *cur, char *str, int len);
-Token *tokenize(char *p);
+Token *tokenize();
 
 extern char *user_input;
 extern Token *token;
@@ -51,6 +61,8 @@ typedef enum {
   ND_MUL,     // *
   ND_DIV,     // /
   ND_ASSIGN,  // =
+  ND_RETURN,  // return
+  ND_EXPR_STMT, // 式文
   ND_LVAR,    // ローカル変数
   ND_EQ,      // ==
   ND_NE,      // !=
@@ -66,14 +78,20 @@ struct Node {
   Node *next;     // 次のノード
   Node *lhs;      // 左辺
   Node *rhs;      // 右辺
+  LVar *lvar;     // ND_LVAR のときに使われる
   int val;        // ND_NUM のときに使われる
   int offset;     // ND_LVAR のときに使われる
 };
 
-Node *program();
+typedef struct {
+  Node *node;
+  LVar *locals;
+  int stack_size;
+} Program;
+Program *program();
 Node *expr();
 
 /**
  * codegen.c
 */
-void codegen(Node *node);
+void codegen(Program *prog);

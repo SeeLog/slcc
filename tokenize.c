@@ -28,14 +28,19 @@ void error_at(char *loc, char *fmt, ...) {
   exit(1);
 }
 
+char *strndup(char *str, int len) {
+  char *buf = malloc(len + 1);
+  strncpy(buf, str, len);
+  buf[len] = '\0';
+  return buf;
+}
+
 // 次のトークンが期待している文字列のときには、トークンを1つ読み進めて真を返す。
 // それ以外の場合には偽を返す。
 bool consume(char *op) {
-  if (token->kind != TK_RESERVED ||
-      strlen(op) != token->len ||
-      memcmp(token->str, op, token->len)) {
+  if (token->kind != TK_RESERVED || strlen(op) != token->len ||
+      memcmp(token->str, op, token->len))
     return false;
-  }
   token = token->next;
   return true;
 }
@@ -98,8 +103,17 @@ bool starts_with(char *p, char *q) {
   return memcmp(p, q, strlen(q)) == 0;
 }
 
+bool is_alpha(char c) {
+  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '_';
+}
+
+bool is_alnum(char c) {
+  return is_alpha(c) || ('0' <= c && c <= '9');
+}
+
 // 入力文字列 user_input をトークナイズして返す
-Token *tokenize(char *p) {
+Token *tokenize() {
+  char *p = user_input;
   Token head;
   head.next = NULL;
   Token *cur = &head;
@@ -111,6 +125,13 @@ Token *tokenize(char *p) {
       continue;
     }
 
+    // return
+    if (starts_with(p, "return") && !is_alnum(p[6])) {
+      cur = new_token(TK_RESERVED, cur, p, 6);
+      p += 6;
+      continue;
+    }
+
     // 複数文字の演算子
     if (starts_with(p, "==") || starts_with(p, "!=") ||
         starts_with(p, "<=") || starts_with(p, ">=")) {
@@ -119,19 +140,17 @@ Token *tokenize(char *p) {
       continue;
     }
 
-    if (strchr("+-*/()<>;", *p)) {
+    if (strchr("+-*/()<>;=", *p)) {
       cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
     }
 
-    if (strchr("=", *p)) {
-      cur = new_token(TK_RESERVED, cur, p++, 1);
-      continue;
-    }
-
-    if ('a' <= *p && *p <= 'z') {
-      cur = new_token(TK_IDENT, cur, p++, 1);
-      cur->len = 1;
+    if (is_alpha(*p)) {
+      char *q = p++;
+      while (is_alnum(*p)) {
+        p++;
+      }
+      cur = new_token(TK_IDENT, cur, q, p - q);
       continue;
     }
 
